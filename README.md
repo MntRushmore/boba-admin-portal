@@ -1,8 +1,7 @@
 # 🧋 Boba Drops Reviewer Portal
 
-A Summer-of-Making themed submission reviewer portal.
 
-## Quick Start
+## starrtup
 
 1. Install dependencies:
 ```bash
@@ -28,9 +27,3 @@ Deploy to Vercel:
 ```bash
 vercel
 ```
-
-Add environment variables in Vercel dashboard.
-
-## Documentation
-
-See the complete documentation in the original artifact.

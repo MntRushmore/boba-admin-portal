@@ -1,108 +1,104 @@
-
-
 'use client'
 
-  import Sidebar from '@/components/Sidebar'
-  import SubmissionList from '@/components/SubmissionList'
-  import InspectorPanel from '@/components/InspectorPanel'
+import Sidebar from '@/components/Sidebar'
+import SubmissionList from '@/components/SubmissionList'
+import InspectorPanel from '@/components/InspectorPanel'
 import { useState, useEffect } from 'react'
 
-  console.log('Sidebar:', Sidebar)
-  console.log('SubmissionList:', SubmissionList)
-  console.log('InspectorPanel:', InspectorPanel)
+export interface Submission {
+  id: string
+  name: string
+  codeUrl: string
+  playableUrl: string
+  status: 'Pending' | 'Approved' | 'Changes Requested'
+  decisionReason?: string
+  birthdate?: string
+  screenshot?: string
+  eventCode: string
+}
 
-  export interface Submission {
-    id: string
-    name: string
-    codeUrl: string
-    playableUrl: string
-    status: 'Pending' | 'Approved' | 'Changes Requested'
-    decisionReason?: string
-    birthdate?: string
-    screenshot?: string
-    eventCode: string
+export default function Home() {
+  const [submissions, setSubmissions] = useState<Submission[]>([])
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
+  const [currentView, setCurrentView] = useState<'workshop' | 'individual'>('workshop')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchSubmissions()
+  }, [currentView])
+
+  const fetchSubmissions = async () => {
+    setLoading(true)
+    try {
+      const viewName = currentView === 'workshop' ? 'Workshop Under Review' : 'Individual Under Review'
+      const res = await fetch(`/api/submission/submissions?view=${encodeURIComponent(viewName)}`)
+      const data = await res.json()
+      setSubmissions(data.submissions || [])
+
+      if (data.submissions && data.submissions.length > 0 && !selectedSubmission) {
+        setSelectedSubmission(data.submissions[0])
+      }
+    } catch (error) {
+      console.error('Failed to fetch submissions:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  export default function Home() {
-    const [submissions, setSubmissions] = useState<Submission[]>([])
-    const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
-    const [currentView, setCurrentView] = useState<'workshop' | 'individual'>('workshop')
-    const [loading, setLoading] = useState(true)
+  const handleStatusUpdate = async (id: string, status: string, reason: string) => {
+    try {
+      const res = await fetch('/api/submission/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status, reason }),
+      })
 
-    useEffect(() => {
-      fetchSubmissions()
-    }, [currentView])
+      if (res.ok) {
+        await fetchSubmissions()
+        handleNext()
+      } else {
+        console.error('Failed to update status:', await res.text())
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error)
+    }
+  }
 
-    const fetchSubmissions = async () => {
-      setLoading(true)
-      try {
-        const viewName = currentView === 'workshop' ? 'Workshop Under Review' : 'Individual Under Review'
-        const res = await fetch(`/api/submission/submissions?view=${encodeURIComponent(viewName)}`)
-        const data = await res.json()
-        setSubmissions(data.submissions || [])
+  const handleNext = () => {
+    if (!selectedSubmission) return
+    const currentIndex = submissions.findIndex(s => s.id === selectedSubmission.id)
+    const nextIndex = (currentIndex + 1) % submissions.length
+    setSelectedSubmission(submissions[nextIndex])
+  }
 
-        if (data.submissions && data.submissions.length > 0 && !selectedSubmission) {
-          setSelectedSubmission(data.submissions[0])
-        }
-      } catch (error) {
-        console.error('Failed to fetch submissions:', error)
-      } finally {
-        setLoading(false)
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'n' || e.key === 'N') {
+        handleNext()
       }
     }
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [selectedSubmission, submissions])
 
-    const handleStatusUpdate = async (id: string, status: string, reason: string) => {
-      try {
-        const res = await fetch('/api/update-status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, status, reason }),
-        })
-      
-        if (res.ok) {
-          await fetchSubmissions()
-          handleNext()
-        }
-      } catch (error) {
-        console.error('Failed to update status:', error)
-      }
-    }
+  return (
+    <div className="flex h-screen overflow-hidden">
+      <Sidebar currentView={currentView} onViewChange={setCurrentView} />
 
-    const handleNext = () => {
-      if (!selectedSubmission) return
-      const currentIndex = submissions.findIndex(s => s.id === selectedSubmission.id)
-      const nextIndex = (currentIndex + 1) % submissions.length
-      setSelectedSubmission(submissions[nextIndex])
-    }
+      <div className="flex-1 flex overflow-hidden">
+        <SubmissionList
+          submissions={submissions}
+          selectedId={selectedSubmission?.id}
+          onSelect={setSelectedSubmission}
+          loading={loading}
+        />
 
-    useEffect(() => {
-      const handleKeyPress = (e: KeyboardEvent) => {
-        if (e.key === 'n' || e.key === 'N') {
-          handleNext()
-        }
-      }
-      window.addEventListener('keydown', handleKeyPress)
-      return () => window.removeEventListener('keydown', handleKeyPress)
-    }, [selectedSubmission, submissions])
-
-    return (
-      <div className="flex h-screen overflow-hidden">
-        <Sidebar currentView={currentView} onViewChange={setCurrentView} />
-
-        <div className="flex-1 flex overflow-hidden">
-          <SubmissionList
-            submissions={submissions}
-            selectedId={selectedSubmission?.id}
-            onSelect={setSelectedSubmission}
-            loading={loading}
-          />
-
-          <InspectorPanel
-            submission={selectedSubmission}
-            onStatusUpdate={handleStatusUpdate}
-            onNext={handleNext}
-          />
-        </div>
+        <InspectorPanel
+          submission={selectedSubmission}
+          onStatusUpdate={handleStatusUpdate}
+          onNext={handleNext}
+        />
       </div>
-    )
-  }
+    </div>
+  )
+}

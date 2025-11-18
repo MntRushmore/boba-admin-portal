@@ -75,9 +75,7 @@ export async function getSubmissions(viewName?: string) {
   }
 
   try {
-    const selectOptions: any = {
-      sort: [{ field: 'Created', direction: 'desc' }],
-    }
+    const selectOptions: any = {}
 
     // If a specific view is requested, use it
     if (viewName) {
