@@ -10,9 +10,9 @@ export default async function handler(
   }
 
   try {
-    const { status } = req.query
-    const submissions = await getSubmissions(status as string)
-    
+    const { view } = req.query
+    const submissions = await getSubmissions(view as string)
+
     res.status(200).json({ submissions })
   } catch (error) {
     console.error('Error fetching submissions:', error)

@@ -67,35 +67,42 @@ if (apiKey && baseId) {
   base = Airtable.base(baseId)
 }
 
-export async function getSubmissions(statusFilter?: string) {
+export async function getSubmissions(viewName?: string) {
   // Use mock data if Airtable not configured
   if (!base) {
     console.warn('Using mock data - Airtable not configured')
-    if (statusFilter) {
-      const statuses = statusFilter.split(',')
-      return MOCK_DATA.filter(s => statuses.includes(s.status))
-    }
     return MOCK_DATA
   }
 
-  const records = await base(tableName)
-    .select({
-      filterByFormula: statusFilter ? `{Status} = "${statusFilter}"` : '',
+  try {
+    const selectOptions: any = {
       sort: [{ field: 'Created', direction: 'desc' }],
-    })
-    .all()
+    }
 
-  return records.map((record: any) => ({
-    id: record.id,
-    name: record.get('Name'),
-    codeUrl: record.get('Code URL'),
-    playableUrl: record.get('Playable URL'),
-    status: record.get('Status'),
-    decisionReason: record.get('Decision Reason'),
-    birthdate: record.get('Birthdate'),
-    screenshot: record.get('Screenshot')?.[0]?.url,
-    eventCode: record.get('Event Code'),
-  }))
+    // If a specific view is requested, use it
+    if (viewName) {
+      selectOptions.view = viewName
+    }
+
+    const records = await base(tableName)
+      .select(selectOptions)
+      .all()
+
+    return records.map((record: any) => ({
+      id: record.id,
+      name: record.get('Name'),
+      codeUrl: record.get('Code URL'),
+      playableUrl: record.get('Playable URL'),
+      status: record.get('Status'),
+      decisionReason: record.get('Decision Reason'),
+      birthdate: record.get('Birthdate'),
+      screenshot: record.get('Screenshot')?.[0]?.url,
+      eventCode: record.get('Event Code'),
+    }))
+  } catch (error) {
+    console.error('Error fetching from Airtable:', error)
+    throw error
+  }
 }
 
 export async function getSubmission(id: string) {

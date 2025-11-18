@@ -22,21 +22,21 @@
   export default function Home() {
     const [submissions, setSubmissions] = useState<Submission[]>([])
     const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
-    const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('pending')
+    const [currentView, setCurrentView] = useState<'workshop' | 'individual'>('workshop')
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
       fetchSubmissions()
-    }, [filter])
+    }, [currentView])
 
     const fetchSubmissions = async () => {
       setLoading(true)
       try {
-        const statusParam = filter === 'pending' ? 'Pending' : filter === 'completed' ? 'Approved,Changes Requested' : ''
-        const res = await fetch(`/api/submissions?status=${statusParam}`)
+        const viewName = currentView === 'workshop' ? 'Workshop Under Review' : 'Individual Under Review'
+        const res = await fetch(`/api/submission/submissions?view=${encodeURIComponent(viewName)}`)
         const data = await res.json()
         setSubmissions(data.submissions || [])
-      
+
         if (data.submissions && data.submissions.length > 0 && !selectedSubmission) {
           setSelectedSubmission(data.submissions[0])
         }
@@ -83,8 +83,8 @@
 
     return (
       <div className="flex h-screen overflow-hidden">
-        <Sidebar currentFilter={filter} onFilterChange={setFilter} />
-      
+        <Sidebar currentView={currentView} onViewChange={setCurrentView} />
+
         <div className="flex-1 flex overflow-hidden">
           <SubmissionList
             submissions={submissions}
@@ -92,7 +92,7 @@
             onSelect={setSelectedSubmission}
             loading={loading}
           />
-        
+
           <InspectorPanel
             submission={selectedSubmission}
             onStatusUpdate={handleStatusUpdate}
