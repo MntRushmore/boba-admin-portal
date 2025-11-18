@@ -6,9 +6,15 @@ interface SidebarProps {
   currentView: 'workshop' | 'individual'
   onViewChange: (view: 'workshop' | 'individual') => void
   user?: any
+  stats?: {
+    reviewedToday: number
+    totalPending: number
+    totalApproved: number
+    totalRejected: number
+  }
 }
 
-export default function Sidebar({ currentView, onViewChange, user }: SidebarProps) {
+export default function Sidebar({ currentView, onViewChange, user, stats }: SidebarProps) {
   const [showMenu, setShowMenu] = useState(false)
 
   const navItems = [
@@ -48,7 +54,7 @@ export default function Sidebar({ currentView, onViewChange, user }: SidebarProp
         <p className="text-sm text-mutedText mt-1 font-medium">Submission Reviewer</p>
       </div>
 
-      <nav className="flex-1 space-y-1.5">
+      <nav className="space-y-1.5">
         {navItems.map((item) => (
           <button
             key={item.id}
@@ -63,6 +69,32 @@ export default function Sidebar({ currentView, onViewChange, user }: SidebarProp
           </button>
         ))}
       </nav>
+
+      {/* Statistics Dashboard */}
+      {stats && (
+        <div className="bg-white border-2 border-border rounded-xl p-4 mt-6 shadow-sm">
+          <h3 className="text-xs font-bold text-mutedText uppercase tracking-wide mb-3">Your Stats</h3>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-text">Reviewed Today</span>
+              <span className="text-sm font-bold text-accent">{stats.reviewedToday}</span>
+            </div>
+            <div className="h-px bg-border"></div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-text">Pending</span>
+              <span className="text-sm font-semibold text-yellow-700">{stats.totalPending}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-text">Approved</span>
+              <span className="text-sm font-semibold text-green-700">{stats.totalApproved}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-text">Rejected</span>
+              <span className="text-sm font-semibold text-red-700">{stats.totalRejected}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="relative">
         <div
