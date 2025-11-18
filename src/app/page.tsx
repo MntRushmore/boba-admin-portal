@@ -1,7 +1,11 @@
 
+
+'use client'
+
   import Sidebar from '@/components/Sidebar'
   import SubmissionList from '@/components/SubmissionList'
   import InspectorPanel from '@/components/InspectorPanel'
+import { useState, useEffect } from 'react'
 
   console.log('Sidebar:', Sidebar)
   console.log('SubmissionList:', SubmissionList)
