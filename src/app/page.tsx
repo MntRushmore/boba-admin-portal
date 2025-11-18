@@ -4,6 +4,8 @@ import Sidebar from '@/components/Sidebar'
 import SubmissionList from '@/components/SubmissionList'
 import InspectorPanel from '@/components/InspectorPanel'
 import { useState, useEffect } from 'react'
+import { useUser } from '@stackframe/stack'
+import { useRouter } from 'next/navigation'
 
 export interface Submission {
   id: string
@@ -18,10 +20,20 @@ export interface Submission {
 }
 
 export default function Home() {
+  const user = useUser()
+  const router = useRouter()
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
   const [currentView, setCurrentView] = useState<'workshop' | 'individual'>('workshop')
   const [loading, setLoading] = useState(true)
+
+  // Redirect to sign-in if not authenticated
+  useEffect(() => {
+    if (!user) {
+      const signInUrl = 'https://boba-reviewer-green.hackclub.dev/handler/sign-in?after_auth_return_to=%2Fhandler%2Fsign-up'
+      window.location.href = signInUrl
+    }
+  }, [user, router])
 
   useEffect(() => {
     fetchSubmissions()
@@ -81,9 +93,24 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [selectedSubmission, submissions])
 
+  // Show loading state while checking authentication
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#F9ECD8]">
+        <div className="text-center">
+          <div className="text-xl font-medium text-[#3A2E1F]">Checking authentication...</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar currentView={currentView} onViewChange={setCurrentView} />
+      <Sidebar
+        currentView={currentView}
+        onViewChange={setCurrentView}
+        user={user}
+      />
 
       <div className="flex-1 flex overflow-hidden">
         <SubmissionList

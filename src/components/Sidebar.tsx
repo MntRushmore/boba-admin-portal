@@ -1,15 +1,45 @@
 'use client'
 
+import { useState } from 'react'
+
 interface SidebarProps {
   currentView: 'workshop' | 'individual'
   onViewChange: (view: 'workshop' | 'individual') => void
+  user?: any
 }
 
-export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
+export default function Sidebar({ currentView, onViewChange, user }: SidebarProps) {
+  const [showMenu, setShowMenu] = useState(false)
+
   const navItems = [
     { id: 'workshop', label: 'Workshop Under Review' },
     { id: 'individual', label: 'Individual Under Review' },
   ]
+
+  const getUserInitials = () => {
+    if (!user) return 'R'
+    const displayName = user.displayName || user.primaryEmail || 'Reviewer'
+    return displayName
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
+  const getUserName = () => {
+    if (!user) return 'Reviewer'
+    return user.displayName || user.primaryEmail || 'Reviewer'
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await user?.signOut()
+      window.location.href = 'https://boba-reviewer-green.hackclub.dev/handler/sign-in?after_auth_return_to=%2Fhandler%2Fsign-up'
+    } catch (error) {
+      console.error('Sign out error:', error)
+    }
+  }
 
   return (
     <div className="w-[280px] bg-sidebar border-r-2 border-border p-6 flex flex-col">
@@ -34,16 +64,32 @@ export default function Sidebar({ currentView, onViewChange }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="bg-white border-2 border-border rounded-xl p-4 mt-auto shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center font-semibold text-sm">
-            R
-          </div>
-          <div>
-            <p className="font-semibold text-sm text-text">Reviewer</p>
-            <p className="text-xs text-mutedText">Active Session</p>
+      <div className="relative">
+        <div
+          className="bg-white border-2 border-border rounded-xl p-4 mt-auto shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setShowMenu(!showMenu)}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center font-semibold text-sm">
+              {getUserInitials()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm text-text truncate">{getUserName()}</p>
+              <p className="text-xs text-mutedText">Active Session</p>
+            </div>
           </div>
         </div>
+
+        {showMenu && (
+          <div className="absolute bottom-full mb-2 left-0 right-0 bg-white border-2 border-border rounded-xl shadow-lg overflow-hidden">
+            <button
+              onClick={handleSignOut}
+              className="w-full text-left px-4 py-3 text-sm font-medium text-text hover:bg-sidebar transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
